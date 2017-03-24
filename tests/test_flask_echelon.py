@@ -20,6 +20,14 @@ from flask_echelon import EchelonManager
 DB = MongoClient().test_flask_echelon
 
 
+@pytest.fixture
+def foobarbaz():
+    manager = EchelonManager(database=DB)
+    echelon = "foo::bar::baz"
+    manager.define_echelon(echelon, name="I test things", help="It's a test, ok?")
+    return manager, echelon
+
+
 def setup_function(function):
     DB.echelons.drop()
 
@@ -44,30 +52,25 @@ def test_001_define():
     manager.define_echelon(echelon, name="I test things", help="It's a test, ok?")
 
 
-def test_002_access():
-    manager = EchelonManager(database=DB)
-    echelon = "foo::bar::baz"
-    manager.define_echelon(echelon, name="I test things", help="It's a test, ok?")
+def test_002_access(foobarbaz):
+    manager, echelon = foobarbaz
 
     assert manager.get_echelon(echelon) is not None
     assert echelon in manager.all_echelons
 
 
-def test_003_update():
+def test_003_update(foobarbaz):
     """Can update a given interaction in place"""
-    manager = EchelonManager(database=DB)
-    echelon = "foo::bar::baz"
-    manager.define_echelon(echelon, name="I test things", help="It's a test, ok?")
+    manager, echelon = foobarbaz
+
     manager.define_echelon(echelon, name="I just changed", help="Me too!")
 
     assert 'just changed' in manager.get_echelon(echelon)['name']
     assert len(manager.all_echelons.values()) == 1
 
 
-def test_004_remove():
-    manager = EchelonManager(database=DB)
-    echelon = "foo::bar::baz"
-    manager.define_echelon(echelon, name="I test things", help="It's a test, ok?")
+def test_004_remove(foobarbaz):
+    manager, echelon = foobarbaz
 
     assert manager.get_echelon(echelon) is not None
     assert echelon in manager.all_echelons
