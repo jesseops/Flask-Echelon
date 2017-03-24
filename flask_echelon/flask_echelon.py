@@ -56,6 +56,16 @@ class EchelonManager:
         """
         return self.db[self._mongo_collection].find_one({'echelon': echelon}, {'_id': 0})
 
+    def remove_echelon(self, echelon):
+        """
+        Remove an Echelon from the database
+
+        :param echelon: (str) Representation of a single Echelon within
+        a permission hierarchy
+        :return: None
+        """
+        self.db[self._mongo_collection].remove({'echelon': echelon})
+
     @property
     def all_echelons(self):
         """

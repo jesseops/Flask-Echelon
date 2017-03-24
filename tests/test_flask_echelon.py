@@ -62,3 +62,17 @@ def test_003_update():
 
     assert 'just changed' in manager.get_echelon(echelon)['name']
     assert len(manager.all_echelons.values()) == 1
+
+
+def test_004_remove():
+    manager = EchelonManager(database=DB)
+    echelon = "foo::bar::baz"
+    manager.define_echelon(echelon, name="I test things", help="It's a test, ok?")
+
+    assert manager.get_echelon(echelon) is not None
+    assert echelon in manager.all_echelons
+
+    manager.remove_echelon(echelon)
+
+    assert manager.get_echelon(echelon) is None
+    assert echelon not in manager.all_echelons
