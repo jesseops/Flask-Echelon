@@ -34,6 +34,7 @@ def test_000_init():
     with pytest.raises(Exception):
         EchelonManager(app=Flask(__name__))
     EchelonManager(app=Flask(__name__), database=DB)
+    EchelonManager(database=DB)
 
 
 def test_001_define():
