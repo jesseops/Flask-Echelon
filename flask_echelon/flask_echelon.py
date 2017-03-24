@@ -20,7 +20,7 @@ class EchelonManager:
             self.init_app(app)
 
     def init_app(self, app):
-        self.db[self._mongo_collection].create_index("echelon", unique=True)
+        self.db[self._mongo_collection].create_index(self._mongo_collection, unique=True)
         app.echelon_manager = self
 
     def define_echelon(self, echelon, name=None, help=None):
