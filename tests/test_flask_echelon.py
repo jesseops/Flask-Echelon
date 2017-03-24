@@ -41,3 +41,23 @@ def test_001_define():
     manager = EchelonManager(database=DB)
     echelon = "foo::bar::baz"
     manager.define_echelon(echelon, name="I test things", help="It's a test, ok?")
+
+
+def test_002_access():
+    manager = EchelonManager(database=DB)
+    echelon = "foo::bar::baz"
+    manager.define_echelon(echelon, name="I test things", help="It's a test, ok?")
+
+    assert manager.get_echelon(echelon) is not None
+    assert echelon in manager.all_echelons
+
+
+def test_003_update():
+    """Can update a given interaction in place"""
+    manager = EchelonManager(database=DB)
+    echelon = "foo::bar::baz"
+    manager.define_echelon(echelon, name="I test things", help="It's a test, ok?")
+    manager.define_echelon(echelon, name="I just changed", help="Me too!")
+
+    assert 'just changed' in manager.get_echelon(echelon)['name']
+    assert len(manager.all_echelons.values()) == 1

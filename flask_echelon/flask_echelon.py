@@ -46,6 +46,29 @@ class EchelonManager:
                                                {"$set": payload, "$setOnInsert": init},
                                                upsert=True)
 
+    def get_echelon(self, echelon):
+        """
+        Retrieve full data for a given Echelon
+
+        :param echelon: (str) Representation of a single Echelon within
+        a permission hierarchy
+        :return: dict
+        """
+        return self.db[self._mongo_collection].find_one({'echelon': echelon}, {'_id': 0})
+
+    @property
+    def all_echelons(self):
+        """
+        Retrieve all Echelons as a dictionary where the top level key is
+        the Echelon and the value is the data for the corresponding Echelon
+
+        :return: dict
+        """
+        echelons = {}
+        for echelon in self.db[self._mongo_collection].find({}, {'_id': 0}):
+            echelons[echelon['echelon']] = echelon
+        return echelons
+
     @property
     def db(self):
         if self._db is not None:
