@@ -81,10 +81,17 @@ class EchelonManager:
 
     @property
     def db(self):
+        """
+        Access a database instance. Prioritizes a DB assigned
+        to the `EchelonManager` instance, falling back to the
+        previously initialized app if it exists.
+        :return: `pymongo.MongoClient.Database`
+        """
         if self._db is not None:
             return self._db
         if self.app:
             try:
                 return self.app.db
             except AttributeError:
-                raise Exception('No database defined on manager or current_app')
+                pass  # We'll handle this failure at the end of the method
+        raise Exception('No database defined on manager or current_app')
