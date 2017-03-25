@@ -1,7 +1,13 @@
 # -*- coding: utf-8 -*-
 
 
+from enum import Enum
 from flask import current_app
+
+
+class MemberTypes(Enum):
+    USER = 'users'
+    GROUP = 'groups'
 
 
 class EchelonManager:
@@ -22,6 +28,12 @@ class EchelonManager:
     def init_app(self, app):
         self.db[self._mongo_collection].create_index(self._mongo_collection, unique=True)
         app.echelon_manager = self
+
+    def add_member(self, echelon, member, member_type):
+        if member_type not in MemberTypes:
+            raise TypeError('Got invalid argument for member_type: {}'.format(member_type))
+        payload = {'$addToSet': {member_type.value: member}}
+        self.db[self._mongo_collection].update({'echelon': echelon}, payload)
 
     def define_echelon(self, echelon, name=None, help=None):
         """

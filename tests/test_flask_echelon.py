@@ -13,7 +13,7 @@ import pytest
 
 from flask import Flask
 from pymongo import MongoClient
-from flask_echelon import EchelonManager
+from flask_echelon import EchelonManager, MemberTypes
 
 
 # only use one MongoClient instance
@@ -79,3 +79,10 @@ def test_004_remove(foobarbaz):
 
     assert manager.get_echelon(echelon) is None
     assert echelon not in manager.all_echelons
+
+
+def test_005_addmember(foobarbaz):
+    manager, echelon = foobarbaz
+
+    manager.add_member(echelon, 'testuser', MemberTypes.USER)
+    assert 'testuser' in manager.get_echelon(echelon)['users']
