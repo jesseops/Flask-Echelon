@@ -51,7 +51,7 @@ class EchelonManager:
         :return: None
         """
         if echelon.startswith(self._separator):
-            raise Exception('{} leads with separator "{}"'.format(echelon, self._separator))
+            raise ValueError('{} leads with separator "{}"'.format(echelon, self._separator))
 
         init = {'groups': [], 'users': []}
 

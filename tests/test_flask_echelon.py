@@ -202,3 +202,13 @@ def test_013_custom_separator():
     assert manager.check_access(admin, valid_echelon) is True
     assert manager.check_access(admin, another_valid_echelon) is True
     assert manager.check_access(admin, invalid_echelon) is False
+
+
+def test_014_invalid_echelon():
+    manager = EchelonManager(database=DB)
+    user = User('test', [])
+
+    with pytest.raises(ValueError):
+        manager.define_echelon('::foo::bar')
+    with pytest.raises(ValueError):
+        manager.check_access(user, '::foo::bar')
