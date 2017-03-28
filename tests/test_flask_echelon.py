@@ -58,21 +58,21 @@ def test_000_init():
     EchelonManager(database=DB)
 
 
-def test_001_define():
+def test_001_define_echelon():
     """Can define interactions successfully"""
     manager = EchelonManager(database=DB)
     echelon = "foo::bar::baz"
     manager.define_echelon(echelon, name="I test things", help="It's a test, ok?")
 
 
-def test_002_access(foobarbaz):
+def test_002_access_echelon(foobarbaz):
     manager, echelon = foobarbaz
 
     assert manager.get_echelon(echelon) is not None
     assert echelon in manager.all_echelons
 
 
-def test_003_update(foobarbaz):
+def test_003_update_echelon(foobarbaz):
     """Can update a given interaction in place"""
     manager, echelon = foobarbaz
 
@@ -82,7 +82,7 @@ def test_003_update(foobarbaz):
     assert len(manager.all_echelons.values()) == 1
 
 
-def test_004_remove(foobarbaz):
+def test_004_remove_echelon(foobarbaz):
     manager, echelon = foobarbaz
 
     assert manager.get_echelon(echelon) is not None
@@ -94,7 +94,7 @@ def test_004_remove(foobarbaz):
     assert echelon not in manager.all_echelons
 
 
-def test_005_addmember(foobarbaz):
+def test_005_add_member(foobarbaz):
     manager, echelon = foobarbaz
 
     manager.add_member(echelon, 'testuser', MemberTypes.USER)
@@ -166,3 +166,39 @@ def test_011_hierarchical_access(foobarbaz):
     assert manager.check_access(luser, luser_echelon) is True
 
 
+def test_012_undefined_echelon(foobarbaz):
+    manager, echelon = foobarbaz
+
+    sep = manager._separator
+    undefined = sep.join([echelon, 'undefined'])
+
+    user = User('user', [])
+
+    assert manager.check_access(user, undefined) is False
+
+    manager.add_member(echelon, user.get_id(), MemberTypes.USER)
+
+    assert manager.check_access(user, echelon) is True
+    assert manager.check_access(user, undefined) is True
+
+
+def test_013_custom_separator():
+    manager = EchelonManager(database=DB, separator='|')
+
+    admin_echelon = 'foo'
+    valid_echelon = 'foo|bar'
+    another_valid_echelon = 'foo|bar|baz'
+    invalid_echelon = 'foo!bar'
+
+    manager.define_echelon(admin_echelon)
+    manager.define_echelon(valid_echelon)
+    manager.define_echelon(invalid_echelon)
+
+    admin = User('admin', [])
+
+    manager.add_member(admin_echelon, 'admin', MemberTypes.USER)
+
+    assert manager.check_access(admin, admin_echelon) is True
+    assert manager.check_access(admin, valid_echelon) is True
+    assert manager.check_access(admin, another_valid_echelon) is True
+    assert manager.check_access(admin, invalid_echelon) is False
