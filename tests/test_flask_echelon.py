@@ -239,3 +239,7 @@ def test_016_anonymous():
     manager.add_member('anon', user.get_id(), MemberTypes.USER)
 
     assert manager.check_access(user, 'anon') is True
+
+
+if __name__ == "__main__":
+    pytest.main()

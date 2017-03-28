@@ -10,11 +10,13 @@ with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
 requirements = [
-    # TODO: put package requirements here
+    'enum34'
 ]
 
 test_requirements = [
-    # TODO: put package test requirements here
+    'pytest',
+    'flask',
+    'pymongo'
 ]
 
 setup(
@@ -36,7 +38,7 @@ setup(
     zip_safe=False,
     keywords='flask_echelon',
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Natural Language :: English',
