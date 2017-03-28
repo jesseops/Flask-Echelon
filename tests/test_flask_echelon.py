@@ -21,6 +21,7 @@ DB = MongoClient().test_flask_echelon
 
 
 class User:
+    """Mocks Flask-Login User"""
     def __init__(self, user_id, groups):
         self._id = user_id
         self._groups = groups
@@ -28,6 +29,15 @@ class User:
     @property
     def groups(self):
         return self._groups
+
+    def get_id(self):
+        return self._id
+
+
+class AnonUser:
+    """Mocks Flask-Login Anon User"""
+    def __init__(self, id):
+        self._id = id
 
     def get_id(self):
         return self._id
@@ -212,3 +222,20 @@ def test_014_invalid_echelon():
         manager.define_echelon('::foo::bar')
     with pytest.raises(ValueError):
         manager.check_access(user, '::foo::bar')
+
+
+def test_015_all_echelons():
+    echelons = ['flask::admin', 'flask::user', 'flask', 'foo', 'bar::baz']
+    manager = EchelonManager(database=DB)
+    for e in echelons:
+        manager.define_echelon(e)
+    assert set(echelons) == set(manager.all_echelons.keys())
+
+
+def test_016_anonymous():
+    manager = EchelonManager(database=DB)
+    manager.define_echelon('anon')
+    user = AnonUser('anonymous')
+    manager.add_member('anon', user.get_id(), MemberTypes.USER)
+
+    assert manager.check_access(user, 'anon') is True
