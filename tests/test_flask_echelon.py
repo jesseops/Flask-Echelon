@@ -20,6 +20,19 @@ from flask_echelon import EchelonManager, MemberTypes
 DB = MongoClient().test_flask_echelon
 
 
+class User:
+    def __init__(self, user_id, groups):
+        self._id = user_id
+        self._groups = groups
+
+    @property
+    def groups(self):
+        return self._groups
+
+    def get_id(self):
+        return self._id
+
+
 @pytest.fixture
 def foobarbaz():
     manager = EchelonManager(database=DB)
@@ -86,3 +99,70 @@ def test_005_addmember(foobarbaz):
 
     manager.add_member(echelon, 'testuser', MemberTypes.USER)
     assert 'testuser' in manager.get_echelon(echelon)['users']
+
+
+def test_006_remove_member(foobarbaz):
+    manager, echelon = foobarbaz
+
+    manager.add_member(echelon, 'valid', MemberTypes.GROUP)
+    assert 'valid' in manager.get_echelon(echelon)['groups']
+
+    manager.remove_member(echelon, 'valid', MemberTypes.GROUP)
+    assert 'valid' not in manager.get_echelon(echelon)['groups']
+
+
+def test_006_user_member_noaccess(foobarbaz):
+    manager, echelon = foobarbaz
+
+    user = User('test', [])
+
+    assert manager.check_access(user, echelon) is False
+
+
+def test_007_user_member_access(foobarbaz):
+    manager, echelon = foobarbaz
+
+    user = User('test', [])
+    manager.add_member(echelon, user.get_id(), MemberTypes.USER)
+
+    assert manager.check_access(user, echelon) is True
+
+
+def test_008_group_member_noaccess(foobarbaz):
+    manager, echelon = foobarbaz
+
+    user = User('test', ['foo'])
+
+    assert manager.check_access(user, echelon) is False
+
+
+def test_010_group_member_access(foobarbaz):
+    manager, echelon = foobarbaz
+
+    user = User('test', ['foo'])
+    manager.add_member(echelon, user.groups[0], MemberTypes.GROUP)
+
+    assert manager.check_access(user, echelon) is True
+
+
+def test_011_hierarchical_access(foobarbaz):
+    manager, luser_echelon = foobarbaz
+
+    sep = manager._separator
+
+    admin_echelon = luser_echelon.split(sep)[0]
+    manager.define_echelon(admin_echelon)
+
+    admin = User('admin', [])
+    luser = User('user', [])
+
+    manager.add_member(admin_echelon, admin.get_id(), MemberTypes.USER)
+    manager.add_member(luser_echelon, luser.get_id(), MemberTypes.USER)
+
+    assert manager.check_access(admin, admin_echelon) is True
+    assert manager.check_access(admin, luser_echelon) is True
+
+    assert manager.check_access(luser, admin_echelon) is False
+    assert manager.check_access(luser, luser_echelon) is True
+
+
