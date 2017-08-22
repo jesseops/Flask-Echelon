@@ -16,6 +16,7 @@ class EchelonManager:
     Simple Flask Plugin which provides a hierarchical
     approach to managing Flask application permissions.
     """
+
     def __init__(self, app=None, database=None, collection='echelons', separator='::'):
         self._db = database
         self._separator = separator
@@ -83,7 +84,7 @@ class EchelonManager:
         """
         self.db[self._mongo_collection].remove({'echelon': echelon})
 
-    def check_access(self, user, echelon):
+    def check_access(self, member, echelon, member_type=MemberTypes.USER):
         """
         Verify if a user has access to an Echelon.
 
@@ -111,9 +112,16 @@ class EchelonManager:
                 level = self._separator.join((level, hierarchy.pop(0)))
             else:
                 level = hierarchy.pop(0)
-            if self._is_member(user, level):
+            if self._is_member(member, level, member_type=member_type):
                 return True
         return False
+
+    def member_echelons(self, member, member_type):
+        echelons = []
+        for echelon in self.all_echelons:
+            if self.check_access(member, echelon=echelon, member_type=member_type):
+                echelons.append(echelon)
+        return echelons
 
     @property
     def all_echelons(self):
@@ -146,15 +154,22 @@ class EchelonManager:
                 pass  # We'll handle this failure at the end of the method
         raise Exception('No database defined on manager or current_app')
 
-    def _is_member(self, user, level):
-        user_id = user.get_id()
-        # Groups is not a default attribute, default to empty list
-        user_groups = user.groups if hasattr(user, 'groups') else []
+    def _is_member(self, member, level, member_type):
+        if member_type is MemberTypes.USER:
+            user_id = member.get_id()
+            # Groups is not a default attribute, default to empty list
+            user_groups = member.groups if hasattr(member, 'groups') else []
 
-        payload = {'echelon': level,
-                   "$or": [
-                       {'groups': {'$in': user_groups}},
-                       {'users': {'$in': [user_id]}},
-                   ]}
-        if self.db[self._mongo_collection].find_one(payload, {'_id': 1}):
+            query = {'echelon': level,
+                     "$or": [
+                         {'groups': {'$in': user_groups}},
+                         {'users': {'$in': [user_id]}},
+                     ]}
+        elif member_type is MemberTypes.GROUP:
+            query = {'echelon': level,
+                     'groups': {'$in': [member]}}
+        else:
+            return False
+
+        if self.db[self._mongo_collection].find_one(query, {'_id': 1}):
             return True

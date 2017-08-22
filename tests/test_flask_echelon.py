@@ -10,11 +10,9 @@ Tests for `flask_echelon` module.
 
 import pytest
 
-
 from flask import Flask
 from pymongo import MongoClient
 from flask_echelon import EchelonManager, MemberTypes
-
 
 # only use one MongoClient instance
 DB = MongoClient().test_flask_echelon
@@ -22,6 +20,7 @@ DB = MongoClient().test_flask_echelon
 
 class User:
     """Mocks Flask-Login User"""
+
     def __init__(self, user_id, groups):
         self._id = user_id
         self._groups = groups
@@ -36,6 +35,7 @@ class User:
 
 class AnonUser:
     """Mocks Flask-Login Anon User"""
+
     def __init__(self, id):
         self._id = id
 
@@ -239,6 +239,22 @@ def test_016_anonymous():
     manager.add_member('anon', user.get_id(), MemberTypes.USER)
 
     assert manager.check_access(user, 'anon') is True
+
+
+def test_017_compile_echelons():
+    manager = EchelonManager(database=DB)
+    manager.define_echelon('foo::bar')
+    manager.define_echelon('foo')
+    manager.define_echelon('ham::spam::eggs')
+    manager.define_echelon('spam::spam::spam')
+    user = User('user1', ['group1', 'group2'])
+    manager.add_member('foo', user.get_id(), MemberTypes.USER)
+    manager.add_member('ham::spam::eggs', user.get_id(), MemberTypes.USER)
+    access = manager.member_echelons(user, member_type=MemberTypes.USER)
+    assert 'foo' in access
+    assert 'foo::bar' in access
+    assert 'spam' not in access
+    assert 'spam::spam::spam' not in access
 
 
 if __name__ == "__main__":
