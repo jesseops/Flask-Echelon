@@ -10,10 +10,10 @@ Tests for `flask_echelon` module.
 
 import pytest
 from flask import Flask, _request_ctx_stack
-from flask_login import AnonymousUserMixin, UserMixin, LoginManager
+from flask_login import AnonymousUserMixin, LoginManager, UserMixin
 from pymongo import MongoClient
 
-from flask_echelon import EchelonManager, MemberTypes, AccessCheckFailed
+from flask_echelon import AccessCheckFailed, EchelonManager, MemberTypes
 from flask_echelon.helpers import has_access, require_echelon
 
 # only use one MongoClient instance
