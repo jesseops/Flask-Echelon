@@ -9,38 +9,34 @@ Tests for `flask_echelon` module.
 """
 
 import pytest
-
-from flask import Flask
+from flask import Flask, _request_ctx_stack
+from flask_login import AnonymousUserMixin, UserMixin, LoginManager
 from pymongo import MongoClient
-from flask_echelon import EchelonManager, MemberTypes
+
+from flask_echelon import EchelonManager, MemberTypes, AccessCheckFailed
+from flask_echelon.helpers import has_access, require_echelon
 
 # only use one MongoClient instance
 DB = MongoClient().test_flask_echelon
 
 
-class User:
+class User(UserMixin):
     """Mocks Flask-Login User"""
 
     def __init__(self, user_id, groups):
-        self._id = user_id
+        self.id = user_id
         self._groups = groups
 
     @property
     def groups(self):
         return self._groups
 
-    def get_id(self):
-        return self._id
 
-
-class AnonUser:
+class AnonUser(AnonymousUserMixin):
     """Mocks Flask-Login Anon User"""
 
     def __init__(self, id):
-        self._id = id
-
-    def get_id(self):
-        return self._id
+        self.id = id
 
 
 @pytest.fixture
@@ -255,6 +251,51 @@ def test_017_compile_echelons():
     assert 'foo::bar' in access
     assert 'spam' not in access
     assert 'spam::spam::spam' not in access
+
+
+def test_018_helper_has_access():
+    app = Flask(__name__)
+    LoginManager(app)
+    manager = EchelonManager(app, database=DB)
+
+    manager.define_echelon('foo::bar')
+    manager.define_echelon('foo')
+    manager.define_echelon('spam::spam::spam')
+
+    user = User('user1', ['group1'])
+    manager.add_member('foo', user.get_id(), MemberTypes.USER)
+
+    with app.test_request_context():
+        _request_ctx_stack.top.user = user
+        assert has_access('foo::bar')
+        assert not has_access('spam::spam::spam')
+
+
+def test_019_helper_require_echelon():
+    app = Flask(__name__)
+    LoginManager(app)
+    manager = EchelonManager(app, database=DB)
+
+    manager.define_echelon('foo::bar')
+    manager.define_echelon('foo')
+    manager.define_echelon('spam')
+
+    user = User('user1', ['group1'])
+    manager.add_member('spam', user.get_id(), MemberTypes.USER)
+
+    @require_echelon('foo')
+    def foo():
+        return 'bar'
+
+    @require_echelon('spam::spam::spam')
+    def spam():
+        return 'spam'
+
+    with app.test_request_context():
+        _request_ctx_stack.top.user = user
+        with pytest.raises(AccessCheckFailed):
+            foo()
+        spam()
 
 
 if __name__ == "__main__":

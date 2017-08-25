@@ -2,6 +2,7 @@
 
 
 from enum import Enum
+from .api import EchelonApi
 
 
 class MemberTypes(Enum):
@@ -26,8 +27,9 @@ class EchelonManager:
             self.init_app(app)
 
     def init_app(self, app):
-        self.db[self._mongo_collection].create_index(self._mongo_collection, unique=True)
+        self.db[self._mongo_collection].create_index('echelon', unique=True)
         app.echelon_manager = self
+        app.register_blueprint(EchelonApi)
 
     def add_member(self, echelon, member, member_type):
         if member_type not in MemberTypes:
