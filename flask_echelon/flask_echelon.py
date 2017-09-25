@@ -18,18 +18,18 @@ class EchelonManager:
     approach to managing Flask application permissions.
     """
 
-    def __init__(self, app=None, database=None, collection='echelons', separator='::'):
+    def __init__(self, app=None, database=None, collection='echelons', separator='::', api_url_prefix=None):
         self._db = database
         self._separator = separator
         self._mongo_collection = collection
         if app:
             self.app = app
-            self.init_app(app)
+            self.init_app(app, api_url_prefix)
 
-    def init_app(self, app):
+    def init_app(self, app, api_url_prefix=None):
         self.db[self._mongo_collection].create_index('echelon', unique=True)
         app.echelon_manager = self
-        app.register_blueprint(EchelonApi)
+        app.register_blueprint(EchelonApi, url_prefix=api_url_prefix)
 
     def add_member(self, echelon, member, member_type):
         if member_type not in MemberTypes:

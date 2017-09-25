@@ -103,6 +103,9 @@ def test_004_remove_echelon(foobarbaz):
 def test_005_add_member(foobarbaz):
     manager, echelon = foobarbaz
 
+    with pytest.raises(Exception):
+        manager.add_member(echelon, 'testuser')
+
     manager.add_member(echelon, 'testuser', MemberTypes.USER)
     assert 'testuser' in manager.get_echelon(echelon)['users']
 
@@ -237,7 +240,7 @@ def test_016_anonymous():
     assert manager.check_access(user, 'anon') is True
 
 
-def test_017_compile_echelons():
+def test_017_compile_echelons_user():
     manager = EchelonManager(database=DB)
     manager.define_echelon('foo::bar')
     manager.define_echelon('foo')
@@ -253,7 +256,22 @@ def test_017_compile_echelons():
     assert 'spam::spam::spam' not in access
 
 
-def test_018_helper_has_access():
+def test_018_compile_echelons_group():
+    manager = EchelonManager(database=DB)
+    manager.define_echelon('foo::bar')
+    manager.define_echelon('foo')
+    manager.define_echelon('ham::spam::eggs')
+    manager.define_echelon('spam::spam::spam')
+    manager.add_member('foo', 'group1', MemberTypes.GROUP)
+    manager.add_member('ham::spam::eggs', 'group1', MemberTypes.GROUP)
+    access = manager.member_echelons('group1', member_type=MemberTypes.GROUP)
+    assert 'foo' in access
+    assert 'foo::bar' in access
+    assert 'spam' not in access
+    assert 'spam::spam::spam' not in access
+
+
+def test_019_helper_has_access():
     app = Flask(__name__)
     LoginManager(app)
     manager = EchelonManager(app, database=DB)
@@ -271,7 +289,7 @@ def test_018_helper_has_access():
         assert not has_access('spam::spam::spam')
 
 
-def test_019_helper_require_echelon():
+def test_020_helper_require_echelon():
     app = Flask(__name__)
     LoginManager(app)
     manager = EchelonManager(app, database=DB)
@@ -296,6 +314,30 @@ def test_019_helper_require_echelon():
         with pytest.raises(AccessCheckFailed):
             foo()
         spam()
+
+
+def test_020_helper_unbound():
+    app = Flask(__name__)
+    user = User('user1', ['group1'])
+    with app.test_request_context():
+        _request_ctx_stack.top.user = user
+        with pytest.raises(Exception):
+            assert has_access('foo')
+
+
+def test_021__is_member():
+    manager = EchelonManager(database=DB)
+    manager.define_echelon('foo::bar')
+    manager.define_echelon('foo')
+    manager.define_echelon('ham::spam::eggs')
+    manager.define_echelon('spam::spam::spam')
+    manager.add_member('foo', 'group1', MemberTypes.GROUP)
+    manager.add_member('ham::spam::eggs', 'group1', MemberTypes.GROUP)
+    access = manager.member_echelons('group1', member_type=MemberTypes.GROUP)
+    assert 'foo' in access
+    assert 'foo::bar' in access
+    assert 'spam' not in access
+    assert 'spam::spam::spam' not in access
 
 
 if __name__ == "__main__":

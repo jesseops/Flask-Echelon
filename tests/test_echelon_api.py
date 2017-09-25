@@ -8,12 +8,13 @@ test_echelon_api.py
 Tests for `api` module.
 """
 
+from uuid import uuid4
+
 import pytest
 from flask import Flask
 from pymongo import MongoClient
 
 from flask_echelon import EchelonManager
-from flask_echelon.api import EchelonApi
 
 # only use one MongoClient instance
 DB = MongoClient().test_flask_echelon
@@ -29,13 +30,23 @@ def teardown_function(function):
 
 @pytest.fixture
 def app():
+    mc = MongoClient()
+    db = mc[str(uuid4())]
     app = Flask(__name__)
-    EchelonManager(app, database=DB)
-    app.register_blueprint(EchelonApi)
-    return app
+    EchelonManager(app, database=db, api_url_prefix='/api')
+    yield app
+    mc.drop_database(db.name)
 
 
-def test_000_init(app):
-    """Can be initialized as a Flask plugin or standalone"""
+@pytest.fixture
+def client(app):
     with app.test_client() as client:
-        assert 'echelon api' in client.get('/echelon/').data.decode().lower()
+        yield client
+
+
+def test_000_init(client):
+    assert 'echelon api' in client.get('/api/').data.decode().lower()
+
+
+def test_001_GET_echelon_list(client):
+    client.get('/api/echelons')
