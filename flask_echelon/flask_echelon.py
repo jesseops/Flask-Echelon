@@ -1,13 +1,8 @@
 # -*- coding: utf-8 -*-
 
 
-from enum import Enum
+from . import MemberTypes
 from .api import EchelonApi
-
-
-class MemberTypes(Enum):
-    USER = 'users'
-    GROUP = 'groups'
 
 
 class EchelonManager:
@@ -34,13 +29,17 @@ class EchelonManager:
     def add_member(self, echelon, member, member_type):
         if member_type not in MemberTypes:
             raise TypeError('Got invalid argument for member_type: {}'.format(member_type))
+        if not isinstance(member, str) and hasattr(member, '__iter__'):
+            member = {'$each': member}
         payload = {'$addToSet': {member_type.value: member}}
         self.db[self._mongo_collection].update({'echelon': echelon}, payload)
 
     def remove_member(self, echelon, member, member_type):
         if member_type not in MemberTypes:
             raise TypeError('Got invalid argument for member_type: {}'.format(member_type))
-        payload = {'$pull': {member_type.value: {'$in': [member]}}}
+        if isinstance(member, str):
+            member = [member]
+        payload = {'$pull': {member_type.value: {'$in': member}}}
         self.db[self._mongo_collection].update({'echelon': echelon}, payload)
 
     def define_echelon(self, echelon, name=None, help=None):
