@@ -6,7 +6,6 @@ from werkzeug.local import LocalProxy
 from flask_echelon import __version__
 from .flask_echelon import MemberTypes
 
-
 manager = LocalProxy(lambda: current_app.echelon_manager)
 
 logger = logging.getLogger(__name__)
@@ -63,7 +62,6 @@ def edit_echelon(echelon):
         if member_type.value in req.get('remove', {}):
             manager.remove_member(echelon, req['remove'][member_type.value], member_type)
     return f'{echelon} updated', 200
-
 
 
 @api.route('/echelons/<echelon>', methods=['DELETE'])

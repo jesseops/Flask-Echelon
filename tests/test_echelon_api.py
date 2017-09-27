@@ -86,7 +86,6 @@ def test_002_show_echelon(client, foo):
                           ('6', {'users': ['john117', 'kelly087', 'dutch', 'mickey']}, True),
                           ('7', {'groups': ['spartans', 'odst']}, True)])
 def test_003_create_echelon(client, echelon_name, echelon_request, valid):
-
     assert client.get(f'/api/echelons/{echelon_name}').status_code == 404
 
     create_result = client.put(f'/api/echelons/{echelon_name}',
@@ -107,6 +106,11 @@ def test_003_create_echelon(client, echelon_name, echelon_request, valid):
     assert e['groups'] == echelon_request.get('groups', [])
     assert e['users'] == echelon_request.get('users', [])
 
+    fail = client.put(f'/api/echelons/{echelon_name}',
+                      data=json.dumps(echelon_request),
+                      headers={'Content-Type': 'application/json'})
+    assert fail.status_code == 409
+
 
 def test_004_edit_echelon(client, foo):
     resource = f'/api/echelons/{foo["echelon"]}'
@@ -122,11 +126,15 @@ def test_004_edit_echelon(client, foo):
 
     assert get_response_json(client.get(resource))['users'] == []
 
+    client.post(resource,
+                data=json.dumps({'help': 'changed'}),
+                headers={'Content-Type': 'application/json'})
+
+    assert get_response_json(client.get(resource))['help'] == 'changed'
+
+    assert client.post(resource + 'foo').status_code == 404
+
 
 def test_005_delete_echelon(client, foo):
     client.delete(f'/api/echelons/{foo["echelon"]}')
     assert client.get(f'/api/echelons/{foo["echelon"]}').status_code == 404
-
-
-if __name__ == '__main__':
-    pytest.main()
